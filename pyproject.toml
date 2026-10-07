@@ -1,0 +1,43 @@
+[build-system]
+# setuptools 负责把 backend/src 下的代码和包内 JSON 安装成 Python 项目。
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cnlc-interpretation-agent"
+version = "0.1.0"
+description = "AgentScope 测井框架接入验证原型"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  # 固定框架版本，启用 Agent Service、SQL 会话存储和 Redis 消息总线依赖。
+  "agentscope[service,storage-sql,storage-redis]==2.0.9",
+  # 给原生 SQLAlchemy 存储提供异步 SQLite 驱动。
+  "aiosqlite>=0.21",
+  # 本地启动时读取 .env 中的模型服务配置。
+  "python-dotenv>=1.0",
+]
+
+[dependency-groups]
+# 自动测试工具，不属于专业计算依赖。
+dev = ["pytest>=8", "pytest-asyncio>=1"]
+
+[project.optional-dependencies]
+# --extra prototype 安装进程内测试 Redis，便于本机直接运行原型。
+prototype = ["fakeredis[lua]>=2.30"]
+
+[project.scripts]
+# 运行 cnlc-prototype 时，调用 cnlc_agent/app.py 的 main()。
+cnlc-prototype = "cnlc_agent.app:main"
+
+[tool.setuptools.packages.find]
+# src 布局：Python 包实际位于 backend/src/cnlc_agent。
+where = ["backend/src"]
+
+[tool.setuptools.package-data]
+# 把 Mock JSON 和 AgentScope Skill 指南一并安装。
+cnlc_agent = ["data/*.json", "skills/*/SKILL.md", "prompts/*.md", "static/agentscope/*", "static/agentscope/assets/*"]
+
+[tool.pytest.ini_options]
+# 自动运行 async def 测试。默认只收集 tests 目录中的测试。
+asyncio_mode = "auto"
+testpaths = ["tests"]
